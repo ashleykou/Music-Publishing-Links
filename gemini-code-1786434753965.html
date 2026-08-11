@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>音樂串流平台多合一連結產生器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f0f2f5;
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ==============================
+       第一頁：編輯與實時預覽模式
+       ============================== */
+    #step-1-view {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      #step-1-view {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .editor-card {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .editor-card h2 {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #111;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+    }
+
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      background-color: #111;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 25px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn-generate:hover {
+      background-color: #333;
+    }
+
+    .preview-sticky-container {
+      position: sticky;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .preview-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .phone-card {
+      width: 100%;
+      max-width: 380px;
+      background: linear-gradient(180deg, #fce4ec 0%, #ffffff 40%);
+      border-radius: 28px;
+      padding: 30px 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .card-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      color: #111;
+      word-break: break-word;
+    }
+
+    .card-subtitle {
+      font-size: 0.88rem;
+      color: #666;
+    }
+
+    .link-list {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      min-height: 50px;
+    }
+
+    .platform-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid #f2f2f2;
+    }
+
+    .platform-row:last-child {
+      border-bottom: none;
+    }
+
+    .platform-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .platform-icon {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+
+    .platform-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #111;
+    }
+
+    .btn-play {
+      display: inline-block;
+      padding: 8px 18px;
+      background-color: #e5e7eb;
+      color: #111;
+      font-weight: 800;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    .empty-preview {
+      padding: 30px 20px;
+      text-align: center;
+      color: #aaa;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    /* ==============================
+       第二頁：純粹結果展示頁面
+       ============================== */
+    #step-2-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 40px;
+    }
+
+    .result-action-bar {
+      margin-top: 30px;
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-secondary:hover {
+      background: #f9f9f9;
+      border-color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Step 1 View -->
+  <div id="step-1-view">
+    <div class="editor-card">
+      <h2>1. 設定專輯資訊與網址</h2>
+      
+      <div class="form-group">
+        <label for="input-title">專輯 / 單曲名稱</label>
+        <input type="text" id="input-title" placeholder="例如：THIS IS FOR (DELUXE)" value="THIS IS FOR (DELUXE)" oninput="updateLivePreview()">
+      </div>
+
+      <div class="form-group">
+        <label for="input-subtitle">副標題提示語</label>
+        <input type="text" id="input-subtitle" placeholder="例如：選擇音樂收聽平台" value="選擇音樂收聽平台" oninput="updateLivePreview()">
+      </div>
+
+      <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;">
+      
+      <h3 style="font-size: 1rem; margin-bottom: 15px; color: #666;">2. 貼上平台連結 (留空將不會顯示)</h3>
+
+      <div id="url-inputs-container"></div>
+
+      <button class="btn-generate" onclick="goToResultPage()">確定產生結果頁面 →</button>
+    </div>
+
+    <div class="preview-sticky-container">
+      <div class="preview-label">Live 實時預覽 (安心區)</div>
+      <div class="phone-card" id="live-phone-card">
+        <div class="card-header">
+          <div class="card-title" id="preview-title"></div>
+          <div class="card-subtitle" id="preview-subtitle"></div>
+        </div>
+        <div class="link-list" id="preview-links-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 View -->
+  <div id="step-2-view" class="hidden">
+    <div class="phone-card" id="result-phone-card">
+      <div class="card-header">
+        <div class="card-title" id="result-title"></div>
+        <div class="card-subtitle" id="result-subtitle"></div>
+      </div>
+      <div class="link-list" id="result-links-container"></div>
+    </div>
+
+    <div class="result-action-bar">
+      <button class="btn-secondary" id="btn-copy-short" onclick="copyShortUrl()">複製短網址</button>
+      <button class="btn-secondary" id="btn-copy-long" onclick="copyLongUrl()">複製原網址</button>
+      <button class="btn-secondary" onclick="backToEdit()">← 修改</button>
+    </div>
+  </div>
+
+  <script>
+    const platforms = [
+      { id: "spotify", name: "Spotify", icon: "https://icon.horse/icon/spotify.com" },
+      { id: "apple", name: "Apple Music", icon: "https://icon.horse/icon/music.apple.com" },
+      { id: "ytmusic", name: "YouTube Music", icon: "https://icon.horse/icon/music.youtube.com" },
+      { id: "kkbox", name: "KKBOX", icon: "https://www.kkbox.com/about/img/logo/app_icon.svg" },
+      { id: "amazon", name: "Amazon Music", icon: "https://icon.horse/icon/music.amazon.com" },
+      { id: "tidal", name: "TIDAL", icon: "https://icon.horse/icon/tidal.com" },
+      { id: "qobuz", name: "Qobuz", icon: "https://icon.horse/icon/qobuz.com" },
+      { id: "deezer", name: "Deezer", icon: "https://icon.horse/icon/deezer.com" },
+      { id: "soundcloud", name: "SoundCloud", icon: "https://icon.horse/icon/soundcloud.com" },
+      { id: "pandora", name: "Pandora", icon: "https://icon.horse/icon/pandora.com" }
+    ];
+
+    function init() {
+      const inputsContainer = document.getElementById('url-inputs-container');
+      platforms.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        div.innerHTML = `
+          <label for="url-${p.id}">${p.name}</label>
+          <input type="url" id="url-${p.id}" placeholder="貼上 ${p.name} 專輯或單曲連結" oninput="updateLivePreview()">
+        `;
+        inputsContainer.appendChild(div);
+      });
+
+      document.getElementById('url-spotify').value = "https://open.spotify.com";
+
+      checkUrlParams();
+      updateLivePreview();
+    }
+
+    function getFormData() {
+      const title = document.getElementById('input-title').value.trim();
+      const subtitle = document.getElementById('input-subtitle').value.trim();
+      const links = {};
+      
+      platforms.forEach(p => {
+        const val = document.getElementById(`url-${p.id}`).value.trim();
+        if (val) {
+          links[p.id] = val;
+        }
+      });
+
+      return { title, subtitle, links };
+    }
+
+    function renderCard(cardPrefix, data) {
+      document.getElementById(`${cardPrefix}-title`).innerText = data.title || 'UNTITLED';
+      document.getElementById(`${cardPrefix}-subtitle`).innerText = data.subtitle || '';
+
+      const container = document.getElementById(`${cardPrefix}-links-container`);
+      container.innerHTML = '';
+
+      let hasAnyLink = false;
+
+      platforms.forEach(p => {
+        if (data.links[p.id]) {
+          hasAnyLink = true;
+          const row = document.createElement('div');
+          row.className = 'platform-row';
+          row.innerHTML = `
+            <div class="platform-info">
+              <img src="${p.icon}" alt="${p.name}" class="platform-icon" onerror="this.style.display='none'">
+              <span class="platform-name">${p.name}</span>
+            </div>
+            <a href="${data.links[p.id]}" target="_blank" rel="noopener noreferrer" class="btn-play">LISTEN</a>
+          `;
+          container.appendChild(row);
+        }
+      });
+
+      if (!hasAnyLink && cardPrefix === 'preview') {
+        container.innerHTML = '<div class="empty-preview">於左側貼上網址即可在此預覽</div>';
+      }
+    }
+
+    function updateLivePreview() {
+      const data = getFormData();
+      renderCard('preview', data);
+    }
+
+    function goToResultPage() {
+      const data = getFormData();
+
+      if (!data.title) {
+        alert('請至少輸入專輯名稱。');
+        document.getElementById('input-title').focus();
+        return;
+      }
+
+      renderCard('result', data);
+      updateUrlParams(data);
+
+      document.getElementById('step-1-view').classList.add('hidden');
+      document.getElementById('step-2-view').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    }
+
+    function backToEdit() {
+      document.getElementById('step-2-view').classList.add('hidden');
+      document.getElementById('step-1-view').classList.remove('hidden');
+    }
+
+    function updateUrlParams(data) {
+      const params = new URLSearchParams();
+      if (data.title) params.set('title', data.title);
+      if (data.subtitle) params.set('sub', data.subtitle);
+      Object.keys(data.links).forEach(key => {
+        params.set(key, data.links[key]);
+      });
+      
+      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + params.toString();
+      window.history.pushState({ path: newUrl }, '', newUrl);
+    }
+
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const title = params.get('title');
+      
+      if (title) {
+        const subtitle = params.get('sub') || '';
+        const links = {};
+        platforms.forEach(p => {
+          const val = params.get(p.id);
+          if (val) {
+            links[p.id] = val;
+            document.getElementById(`url-${p.id}`).value = val;
+          } else {
+             if(p.id === 'spotify') document.getElementById('url-spotify').value = "";
+          }
+        });
+        
+        document.getElementById('input-title').value = title;
+        document.getElementById('input-subtitle').value = subtitle;
+
+        renderCard('result', { title, subtitle, links });
+        document.getElementById('step-1-view').classList.add('hidden');
+        document.getElementById('step-2-view').classList.remove('hidden');
+      }
+    }
+
+    // JSONP 方式呼叫 is.gd (完美繞過 CORS 跨網域限制)
+    function shortenUrlJSONP(longUrl) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'isgd_callback_' + Math.random().toString(36).substring(2, 9);
+        const script = document.createElement('script');
+
+        window[callbackName] = function(data) {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          if (data.shorturl) {
+            resolve(data.shorturl);
+          } else {
+            reject(data.errormessage || '縮址失敗');
+          }
+        };
+
+        script.onerror = function() {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject('網路連線失敗');
+        };
+
+        script.src = `https://is.gd/create.php?format=json&callback=${callbackName}&url=${encodeURIComponent(longUrl)}`;
+        document.body.appendChild(script);
+      });
+    }
+
+    // 複製短網址邏輯
+    async function copyShortUrl() {
+      const btn = document.getElementById('btn-copy-short');
+      const longUrl = window.location.href;
+
+      // 判斷是否為本地環境
+      if (longUrl.startsWith('file:') || longUrl.includes('localhost') || longUrl.includes('127.0.0.1')) {
+        await navigator.clipboard.writeText(longUrl);
+        alert('【本機測試提示】\n目前是在本機開啟檔案 (file:// 或 localhost)，縮址 API 無法連至您本機的網址。\n\n已先為您複製完整網址！將此檔案部署至 GitHub Pages、Vercel 或 Server 後即可正常產生短網址！');
+        return;
+      }
+
+      btn.innerText = '處理中...';
+      btn.disabled = true;
+
+      try {
+        const shortUrl = await shortenUrlJSONP(longUrl);
+        await navigator.clipboard.writeText(shortUrl);
+        alert(`短網址產生成功！已複製到剪貼簿：\n${shortUrl}`);
+      } catch (err) {
+        // 如果 JSONP 也失敗，嘗試 fallback 到其他 API 或複製原網址
+        try {
+          const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+          if (res.ok) {
+            const shortUrl = await res.text();
+            await navigator.clipboard.writeText(shortUrl);
+            alert(`短網址產生成功！已複製到剪貼簿：\n${shortUrl}`);
+          } else {
+            throw new Error();
+          }
+        } catch (e) {
+          await navigator.clipboard.writeText(longUrl);
+          alert('縮網址服務暫時無法連線，已改為複製完整長網址！');
+        }
+      } finally {
+        btn.innerText = '複製短網址';
+        btn.disabled = false;
+      }
+    }
+
+    // 複製原網址 (提供備用選項)
+    async function copyLongUrl() {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('已複製完整網址到剪貼簿！');
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
