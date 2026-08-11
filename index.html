@@ -107,14 +107,6 @@
       gap: 10px;
     }
 
-    .preview-label {
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
     /* 手機卡片通用樣式 */
     .phone-card {
       width: 100%;
@@ -298,7 +290,8 @@
   <!-- Step 1 View: 發布者填表區 -->
   <div id="step-1-view">
     <div class="editor-card">
-      <h2>1. 設定專輯資訊與網址</h2>
+      <!-- 已去除 "1." -->
+      <h2>設定專輯資訊與網址</h2>
       
       <div class="form-group">
         <label for="input-title">專輯 / 單曲名稱</label>
@@ -316,12 +309,11 @@
 
       <div id="url-inputs-container"></div>
 
-      <!-- 文字已修改為「下一步 →」 -->
       <button class="btn-generate" onclick="goToResultPage()">下一步 →</button>
     </div>
 
     <div class="preview-sticky-container">
-      <div class="preview-label">Live 實時預覽 (安心區)</div>
+      <!-- 已移除預覽區上方多餘的標籤 -->
       <div class="phone-card" id="live-phone-card">
         <div class="card-header">
           <div class="card-title" id="preview-title"></div>
