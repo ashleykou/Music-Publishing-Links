@@ -205,16 +205,18 @@
       padding-top: 20px;
     }
 
+    /* 已修改為垂直上下排列 */
     .result-action-bar {
       margin-top: 25px;
       display: flex;
-      gap: 12px;
+      flex-direction: column;
+      gap: 10px;
       width: 100%;
       max-width: 380px;
     }
 
     .btn-secondary {
-      flex: 1;
+      width: 100%;
       padding: 12px;
       background: #ffffff;
       border: 1px solid #ccc;
@@ -290,7 +292,6 @@
   <!-- Step 1 View: 發布者填表區 -->
   <div id="step-1-view">
     <div class="editor-card">
-      <!-- 已去除 "1." -->
       <h2>設定專輯資訊與網址</h2>
       
       <div class="form-group">
@@ -313,7 +314,6 @@
     </div>
 
     <div class="preview-sticky-container">
-      <!-- 已移除預覽區上方多餘的標籤 -->
       <div class="phone-card" id="live-phone-card">
         <div class="card-header">
           <div class="card-title" id="preview-title"></div>
@@ -334,13 +334,13 @@
       <div class="link-list" id="result-links-container"></div>
     </div>
 
-    <!-- 發布者管理按鈕（歌迷進入時會被自動隱藏） -->
+    <!-- 發布者管理按鈕（已改為上下排列） -->
     <div class="result-action-bar" id="action-bar">
-      <button class="btn-secondary" style="flex:2; background:#111; color:#fff;" onclick="copyLongUrl()">複製歌迷專用網址</button>
+      <button class="btn-secondary" style="background:#111; color:#fff;" onclick="copyLongUrl()">複製歌迷專用網址</button>
       <button class="btn-secondary" onclick="backToEdit()">← 修改</button>
     </div>
 
-    <!-- 手動縮址推薦服務區（歌迷進入時會被自動隱藏） -->
+    <!-- 手動縮址推薦服務區 -->
     <div class="shortener-tools-card" id="shortener-tools">
       <h3>手動縮址推薦服務：</h3>
       <div class="shortener-links">
@@ -449,7 +449,6 @@
       const fanUrl = getFanShareUrl();
       document.getElementById('fan-url-preview').value = fanUrl;
 
-      // 確保發布者能看到管理區與手動縮址工具
       document.getElementById('action-bar').classList.remove('hidden');
       document.getElementById('shortener-tools').classList.remove('hidden');
 
@@ -463,7 +462,6 @@
       document.getElementById('step-1-view').classList.remove('hidden');
     }
 
-    // 產生給歌迷開的專屬網址（帶有 view=fan 標籤）
     function getFanShareUrl() {
       const data = getFormData();
       const params = new URLSearchParams();
@@ -500,7 +498,6 @@
 
         renderCard('result', { title, subtitle, links });
 
-        // 如果是歌迷進入，自動隱藏發布者專用的底部按鈕與縮址工具區
         if (isFanView) {
           document.getElementById('action-bar').classList.add('hidden');
           document.getElementById('shortener-tools').classList.add('hidden');
