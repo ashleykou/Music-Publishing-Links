@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>音樂串流平台多合一連結產生器</title>
+  <title>音樂串流平台多合一連結</title>
   <style>
     * {
       box-sizing: border-box;
@@ -23,9 +23,7 @@
       display: none !important;
     }
 
-    /* ==============================
-       第一頁：編輯與實時預覽模式
-       ============================== */
+    /* Step 1 View: 編輯與實時預覽 */
     #step-1-view {
       max-width: 1100px;
       margin: 0 auto;
@@ -93,7 +91,7 @@
       border-radius: 12px;
       cursor: pointer;
       margin-top: 25px;
-      transition: background-color 0.2s, transform 0.1s;
+      transition: background-color 0.2s;
     }
 
     .btn-generate:hover {
@@ -117,6 +115,7 @@
       letter-spacing: 1px;
     }
 
+    /* 手機卡片通用樣式 */
     .phone-card {
       width: 100%;
       max-width: 380px;
@@ -205,9 +204,7 @@
       font-style: italic;
     }
 
-    /* ==============================
-       第二頁：純粹結果展示頁面
-       ============================== */
+    /* Step 2 View */
     #step-2-view {
       display: flex;
       flex-direction: column;
@@ -244,14 +241,14 @@
 </head>
 <body>
 
-  <!-- Step 1 View -->
+  <!-- Step 1 View: 發布者填表區 -->
   <div id="step-1-view">
     <div class="editor-card">
       <h2>1. 設定專輯資訊與網址</h2>
       
       <div class="form-group">
         <label for="input-title">專輯 / 單曲名稱</label>
-        <input type="text" id="input-title" placeholder="例如：THIS IS FOR (DELUXE)" value="THIS IS FOR (DELUXE)" oninput="updateLivePreview()">
+        <input type="text" id="input-title" placeholder="例如：TWICE 《THIS IS FOR》" value="TWICE 《THIS IS FOR》" oninput="updateLivePreview()">
       </div>
 
       <div class="form-group">
@@ -280,7 +277,7 @@
     </div>
   </div>
 
-  <!-- Step 2 View -->
+  <!-- Step 2 View: 結果展示頁面 -->
   <div id="step-2-view" class="hidden">
     <div class="phone-card" id="result-phone-card">
       <div class="card-header">
@@ -290,7 +287,8 @@
       <div class="link-list" id="result-links-container"></div>
     </div>
 
-    <div class="result-action-bar">
+    <!-- 發布者管理按鈕（歌迷點開時會被自動隱藏） -->
+    <div class="result-action-bar" id="action-bar">
       <button class="btn-secondary" id="btn-copy-short" onclick="copyShortUrl()">複製短網址</button>
       <button class="btn-secondary" id="btn-copy-long" onclick="copyLongUrl()">複製原網址</button>
       <button class="btn-secondary" onclick="backToEdit()">← 修改</button>
@@ -389,7 +387,9 @@
       }
 
       renderCard('result', data);
-      updateUrlParams(data);
+      
+      // 確保發布者能看到管理按鈕
+      document.getElementById('action-bar').classList.remove('hidden');
 
       document.getElementById('step-1-view').classList.add('hidden');
       document.getElementById('step-2-view').classList.remove('hidden');
@@ -401,21 +401,24 @@
       document.getElementById('step-1-view').classList.remove('hidden');
     }
 
-    function updateUrlParams(data) {
+    // 產生給歌迷開的專屬網址（帶有 view=fan 參數）
+    function getFanShareUrl() {
+      const data = getFormData();
       const params = new URLSearchParams();
       if (data.title) params.set('title', data.title);
       if (data.subtitle) params.set('sub', data.subtitle);
       Object.keys(data.links).forEach(key => {
         params.set(key, data.links[key]);
       });
-      
-      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + params.toString();
-      window.history.pushState({ path: newUrl }, '', newUrl);
+      params.set('view', 'fan'); // 歌迷視角標籤
+
+      return window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + params.toString();
     }
 
     function checkUrlParams() {
       const params = new URLSearchParams(window.location.search);
       const title = params.get('title');
+      const isFanView = params.get('view') === 'fan';
       
       if (title) {
         const subtitle = params.get('sub') || '';
@@ -426,7 +429,7 @@
             links[p.id] = val;
             document.getElementById(`url-${p.id}`).value = val;
           } else {
-             if(p.id === 'spotify') document.getElementById('url-spotify').value = "";
+            if(p.id === 'spotify') document.getElementById('url-spotify').value = "";
           }
         });
         
@@ -434,82 +437,54 @@
         document.getElementById('input-subtitle').value = subtitle;
 
         renderCard('result', { title, subtitle, links });
+
+        // 如果是歌迷進入，自動隱藏底部的管理按鈕
+        if (isFanView) {
+          document.getElementById('action-bar').classList.add('hidden');
+        }
+
         document.getElementById('step-1-view').classList.add('hidden');
         document.getElementById('step-2-view').classList.remove('hidden');
       }
     }
 
-    // JSONP 方式呼叫 is.gd (完美繞過 CORS 跨網域限制)
-    function shortenUrlJSONP(longUrl) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'isgd_callback_' + Math.random().toString(36).substring(2, 9);
-        const script = document.createElement('script');
-
-        window[callbackName] = function(data) {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          if (data.shorturl) {
-            resolve(data.shorturl);
-          } else {
-            reject(data.errormessage || '縮址失敗');
-          }
-        };
-
-        script.onerror = function() {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          reject('網路連線失敗');
-        };
-
-        script.src = `https://is.gd/create.php?format=json&callback=${callbackName}&url=${encodeURIComponent(longUrl)}`;
-        document.body.appendChild(script);
-      });
+    // 複製歌迷專用的完整長網址
+    async function copyLongUrl() {
+      const fanUrl = getFanShareUrl();
+      await navigator.clipboard.writeText(fanUrl);
+      alert('已複製歌迷專用網址到剪貼簿！');
     }
 
-    // 複製短網址邏輯
+    // 調用 CleanURI 高成功率 API 進行縮網址
     async function copyShortUrl() {
       const btn = document.getElementById('btn-copy-short');
-      const longUrl = window.location.href;
+      const fanUrl = getFanShareUrl();
 
-      // 判斷是否為本地環境
-      if (longUrl.startsWith('file:') || longUrl.includes('localhost') || longUrl.includes('127.0.0.1')) {
-        await navigator.clipboard.writeText(longUrl);
-        alert('【本機測試提示】\n目前是在本機開啟檔案 (file:// 或 localhost)，縮址 API 無法連至您本機的網址。\n\n已先為您複製完整網址！將此檔案部署至 GitHub Pages、Vercel 或 Server 後即可正常產生短網址！');
-        return;
-      }
-
-      btn.innerText = '處理中...';
+      btn.innerText = '縮址中...';
       btn.disabled = true;
 
       try {
-        const shortUrl = await shortenUrlJSONP(longUrl);
-        await navigator.clipboard.writeText(shortUrl);
-        alert(`短網址產生成功！已複製到剪貼簿：\n${shortUrl}`);
-      } catch (err) {
-        // 如果 JSONP 也失敗，嘗試 fallback 到其他 API 或複製原網址
-        try {
-          const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-          if (res.ok) {
-            const shortUrl = await res.text();
-            await navigator.clipboard.writeText(shortUrl);
-            alert(`短網址產生成功！已複製到剪貼簿：\n${shortUrl}`);
-          } else {
-            throw new Error();
-          }
-        } catch (e) {
-          await navigator.clipboard.writeText(longUrl);
-          alert('縮網址服務暫時無法連線，已改為複製完整長網址！');
+        const res = await fetch('https://cleanuri.com/api/v1/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ url: fanUrl })
+        });
+
+        const data = await res.json();
+        if (data.result_url) {
+          await navigator.clipboard.writeText(data.result_url);
+          alert(`短網址產生成功！已複製到剪貼簿：\n${data.result_url}`);
+        } else {
+          throw new Error();
         }
+      } catch (err) {
+        // 如果縮址伺服器回應較慢，自動自動切換為複製歌迷專用的長網址
+        await navigator.clipboard.writeText(fanUrl);
+        alert('已為您複製歌迷專用網址到剪貼簿！');
       } finally {
         btn.innerText = '複製短網址';
         btn.disabled = false;
       }
-    }
-
-    // 複製原網址 (提供備用選項)
-    async function copyLongUrl() {
-      await navigator.clipboard.writeText(window.location.href);
-      alert('已複製完整網址到剪貼簿！');
     }
 
     window.onload = init;
