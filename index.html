@@ -205,7 +205,7 @@
       padding-top: 20px;
     }
 
-    /* 已修改為垂直上下排列 */
+    /* 強制改為垂直上下排列 */
     .result-action-bar {
       margin-top: 25px;
       display: flex;
@@ -225,6 +225,7 @@
       font-weight: 600;
       cursor: pointer;
       text-align: center;
+      box-sizing: border-box;
     }
 
     .btn-secondary:hover {
@@ -334,7 +335,7 @@
       <div class="link-list" id="result-links-container"></div>
     </div>
 
-    <!-- 發布者管理按鈕（已改為上下排列） -->
+    <!-- 發布者管理按鈕（已移除內聯 flex 樣式，完全依賴 class 控制 100% 寬度上下排列） -->
     <div class="result-action-bar" id="action-bar">
       <button class="btn-secondary" style="background:#111; color:#fff;" onclick="copyLongUrl()">複製歌迷專用網址</button>
       <button class="btn-secondary" onclick="backToEdit()">← 修改</button>
